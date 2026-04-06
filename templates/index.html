@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>🎬 Pitch Visualizer</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink: #0d0d0d; --ink2: #555; --ink3: #999;
+    --surface: #fff; --surface2: #f7f6f3; --surface3: #f0ede7;
+    --accent: #c84b2f; --accent2: #e8b89a;
+    --border: #e2ddd6;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--surface2);
+    min-height: 100vh;
+    color: var(--ink);
+  }
+
+  /* ── HERO ── */
+  .hero {
+    background: #0d0d0d;
+    padding: 52px 60px 44px;
+    position: relative; overflow: hidden;
+  }
+  .hero::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 55% 90% at 90% 50%, #c84b2f28, transparent 65%);
+    pointer-events: none;
+  }
+  .hero-label {
+    font-size: 11px; font-weight: 600; letter-spacing: 3px;
+    text-transform: uppercase; color: var(--accent); margin-bottom: 14px;
+  }
+  .hero h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(36px, 5vw, 58px);
+    color: #fff; line-height: 1.05; margin-bottom: 12px;
+  }
+  .hero h1 em { color: var(--accent2); font-style: italic; }
+  .hero p {
+    font-size: 15px; color: #aaa; font-weight: 300;
+    max-width: 520px; line-height: 1.7;
+  }
+
+  /* ── MAIN ── */
+  .main { padding: 40px 60px 80px; max-width: 1200px; margin: 0 auto; }
+
+  /* ── INPUT CARD ── */
+  .input-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 36px;
+  }
+  .input-card label {
+    display: block; font-size: 11px; font-weight: 600;
+    letter-spacing: 2px; text-transform: uppercase;
+    color: var(--ink3); margin-bottom: 10px;
+  }
+  textarea {
+    width: 100%; min-height: 140px;
+    border: 1px solid var(--border); border-radius: 12px;
+    padding: 16px; resize: vertical; outline: none;
+    font-family: 'DM Sans', sans-serif; font-size: 15px;
+    line-height: 1.7; color: var(--ink);
+    background: var(--surface2);
+    transition: border-color 0.2s, background 0.2s;
+  }
+  textarea:focus { border-color: var(--accent); background: #fff; }
+
+  .controls {
+    display: flex; align-items: center; gap: 14px;
+    flex-wrap: wrap; margin-top: 18px;
+  }
+
+  select {
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 14px; font-family: 'DM Sans', sans-serif;
+    font-size: 14px; background: var(--surface2);
+    color: var(--ink); outline: none; cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  select:focus { border-color: var(--accent); }
+
+  .btn-primary {
+    background: var(--accent); color: #fff;
+    border: none; border-radius: 8px;
+    padding: 12px 28px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn-primary:hover { background: #a83825; transform: translateY(-1px); }
+  .btn-primary:active { transform: translateY(0); }
+
+  /* ── LOADING OVERLAY ── */
+  #loading-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(13,13,13,0.75);
+    z-index: 999;
+    align-items: center; justify-content: center;
+    flex-direction: column; gap: 20px;
+  }
+  #loading-overlay.active { display: flex; }
+  .spinner {
+    width: 52px; height: 52px;
+    border: 3px solid rgba(255,255,255,0.2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text {
+    color: #fff; font-size: 15px; font-weight: 400;
+    letter-spacing: 0.5px;
+  }
+  .loading-sub {
+    color: #888; font-size: 13px;
+  }
+
+  /* ── DIVIDER ── */
+  .divider {
+    display: flex; align-items: center; gap: 16px;
+    margin: 48px 0 32px;
+  }
+  .divider-line { flex: 1; height: 1px; background: var(--border); }
+  .divider-label {
+    font-family: 'DM Serif Display', serif;
+    font-size: 26px; color: var(--ink); white-space: nowrap;
+  }
+  .scene-badge {
+    background: var(--accent); color: #fff;
+    font-size: 12px; font-weight: 600;
+    padding: 4px 12px; border-radius: 20px;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  /* ── STORYBOARD GRID ── */
+  .storyboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 28px;
+  }
+
+  .scene-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    overflow: hidden;
+    transition: transform 0.25s, box-shadow 0.25s;
+    animation: slideUp 0.5s ease both;
+  }
+  .scene-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+  }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .scene-img {
+    width: 100%; aspect-ratio: 4/3;
+    object-fit: cover;
+    display: block;
+    background: var(--surface3);
+    transition: transform 0.4s;
+  }
+  .scene-card:hover .scene-img { transform: scale(1.03); }
+
+  .scene-body { padding: 22px; }
+  .scene-num {
+    font-size: 10px; font-weight: 600; letter-spacing: 2.5px;
+    text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+  }
+  .scene-text {
+    font-size: 14px; line-height: 1.7; color: var(--ink);
+    font-weight: 500; margin-bottom: 16px;
+  }
+  .scene-divider { height: 1px; background: var(--border); margin-bottom: 14px; }
+  .prompt-label {
+    font-size: 10px; font-weight: 600; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--ink3); margin-bottom: 7px;
+  }
+  .scene-prompt {
+    font-size: 12px; line-height: 1.65; color: var(--ink2);
+    font-style: italic;
+    background: var(--surface2); border-radius: 8px;
+    padding: 10px 12px;
+  }
+
+  /* ── EMPTY STATE ── */
+  .empty {
+    text-align: center; padding: 80px 40px;
+    color: var(--ink3);
+  }
+  .empty-icon { font-size: 52px; margin-bottom: 16px; }
+  .empty-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 26px; color: var(--ink2); margin-bottom: 8px;
+  }
+  .empty-sub { font-size: 14px; line-height: 1.7; max-width: 380px; margin: 0 auto; }
+
+  @media (max-width: 640px) {
+    .hero { padding: 32px 24px; }
+    .main { padding: 24px 20px 60px; }
+    .input-card { padding: 22px; }
+    .storyboard-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Loading overlay shown while form submits -->
+<div id="loading-overlay">
+  <div class="spinner"></div>
+  <div class="loading-text">Building your storyboard...</div>
+  <div class="loading-sub">AI is refining prompts and generating images</div>
+</div>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="hero-label">AI Storyboard Generator</div>
+  <h1>Pitch <em>Visualizer</em></h1>
+  <p>Transform your narrative into a cinematic storyboard. Paste your story, choose a style, and watch AI bring every scene to life.</p>
+</div>
+
+<!-- Main content -->
+<div class="main">
+
+  <!-- Input form -->
+  <div class="input-card">
+    <form method="POST" action="/" onsubmit="showLoading()">
+      <label for="text">Your Story</label>
+      <textarea
+        id="text" name="text"
+        placeholder="Paste your pitch narrative here... (3–6 sentences works best)&#10;&#10;Example: A startup founder struggled to manage her growing team. The chaos of missed deadlines was costing money. Then she discovered a tool that changed everything..."
+        required
+      >{{ original_text or '' }}</textarea>
+
+      <div class="controls">
+        <button type="submit" class="btn-primary">✦ Generate Storyboard</button>
+
+        <select name="style">
+          <option value="cinematic realism"        {% if style == 'cinematic realism' %}selected{% endif %}>🎬 Cinematic Realism</option>
+          <option value="digital art illustration"  {% if style == 'digital art illustration' %}selected{% endif %}>🎨 Digital Art</option>
+          <option value="watercolor painting"       {% if style == 'watercolor painting' %}selected{% endif %}>🖌 Watercolor</option>
+          <option value="noir film photography"     {% if style == 'noir film photography' %}selected{% endif %}>📷 Noir Film</option>
+          <option value="3D render Pixar style"     {% if style == '3D render Pixar style' %}selected{% endif %}>✨ 3D / Pixar</option>
+          <option value="flat vector corporate art" {% if style == 'flat vector corporate art' %}selected{% endif %}>📊 Corporate</option>
+        </select>
+      </div>
+    </form>
+  </div>
+
+  <!-- Storyboard output -->
+  {% if storyboard %}
+  <div class="divider">
+    <div class="divider-line"></div>
+    <div class="divider-label">Your Storyboard</div>
+    <span class="scene-badge">{{ storyboard|length }} scenes</span>
+    <div class="divider-line"></div>
+  </div>
+
+  <div class="storyboard-grid">
+    {% for scene in storyboard %}
+    <div class="scene-card" style="animation-delay: {{ loop.index0 * 0.1 }}s">
+      <div style="overflow:hidden">
+        <img
+          class="scene-img"
+          src="{{ scene.image }}"
+          alt="Scene {{ loop.index }}"
+          onerror="this.src='https://placehold.co/800x600/f0ede7/999999?text=Image+Unavailable'"
+        />
+      </div>
+      <div class="scene-body">
+        <div class="scene-num">Scene {{ loop.index }} of {{ storyboard|length }}</div>
+        <div class="scene-text">{{ scene.text }}</div>
+        <div class="scene-divider"></div>
+        <div class="prompt-label">AI-Refined Prompt</div>
+        <div class="scene-prompt">{{ scene.prompt }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="empty">
+    <div class="empty-icon">🎬</div>
+    <div class="empty-title">Your storyboard awaits</div>
+    <div class="empty-sub">Enter 3–6 sentences of your pitch story above, pick a visual style, and hit Generate.</div>
+  </div>
+  {% endif %}
+
+</div>
+
+<script>
+  function showLoading() {
+    document.getElementById('loading-overlay').classList.add('active');
+  }
+</script>
+</body>
+</html>
